@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Contatos</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<style>
+  * {
+    margin: 0px;
+    font-family: 'Poppins', Arial, Helvetica, sans-serif;
+    box-sizing: border-box;
+  }
+
+  input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+
+  }
+
+  input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  #app {
+    max-width: 800px;
+    margin: 40px auto;
+    border-radius: 5px;
+    padding: 20px 40px;
+    border: 1px solid #d1d1d1;
+  }
+
+  .modalBg {
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, .1);
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    display: grid;
+    align-items: center;
+    justify-content: center;
+    z-index: 99;
+  }
+
+  form {
+    background-color: white;
+    max-width: 400px;
+    display: grid;
+    padding: 20px 40px;
+    position: relative;
+    border-radius: 4px;
+    box-shadow: 20px 40px 60px rgba(0, 0, 0, .1);
+  }
+
+  form h2 {
+    margin-bottom: 20PX;
+  }
+
+  .fechar {
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    background-color: #f10c49;
+    font-weight: 600;
+    color: #fff;
+    border: 1px solid #f10c49;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 5px 10px;
+  }
+
+  .fechar:hover,
+  .botoes button:hover,
+  .add:hover,
+  input[type="submit"]:hover {
+    transform: scale(1.1);
+  }
+
+  input {
+    border-radius: 4px;
+    border: 1px solid black;
+    padding: 10px;
+    margin: 5px 0px 15px 0px;
+  }
+
+  p {
+    font-size: 0.75rem;
+    color: red;
+    font-weight: bold;
+    margin-bottom: 5px;
+    max-width: 240px;
+  }
+
+  input[type="submit"],
+  .add {
+    margin-top: 20px;
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #339194;
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 5px;
+  }
+
+  .tabela {
+    margin-top: 40px;
+    padding: 20px 0px;
+    border-top: 1px solid #d1d1d1;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  tr {
+    border-bottom: 1px solid #eee;
+  }
+
+  td {
+    padding: 10px 0px;
+  }
+
+  .botoes {
+    text-align: end;
+  }
+
+  .botoes button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    font-weight: 500;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+
+  .editar {
+    background-color: #f6d86b;
+  }
+
+  .excluir {
+    background-color: #f10c49;
+  }
+
+  .azul {
+    color: blue;
+  }
+
+  @media(max-width: 600px) {
+    .botoes {
+      text-align: center;
+    }
+
+    .botoes button {
+      margin-bottom: 5px;
+    }
+  }
+</style>
+
+<body>
+
+  <div id="app">
+    <h1>Lista de Contatos</h1>
+    <button @click="modalAdicionar = true" class="add">Adicionar</button>
+
+    <div v-if="modalAdicionar" class="modalBg">
+      <form>
+        <button class="fechar" @click="fecharModal">X</button>
+        <h2>Adicionar Contato</h2>
+        <label for="nome">Nome </label>
+        <input type="text" id="nome" for="nome" required v-model="nome" value="" placeholder="Insira o nome aqui">
+        <label for="telefone">Telefone</label>
+        <input type="text" maxlength="15" id="telefone" for="telefone" required v-model="telefone" value="" placeholder="Insira o telefone aqui">
+        <p v-if="erroNome">O nome precisa conter pelo menos 2 palavras com 3 letras cada</p>
+        <p v-if="erroTelefone">O telefone precisa conter 10 dígitos</p>
+        <input type="submit" value="Adicionar" @click.prevent="adicionar">
+      </form>
+    </div>
+
+    <div v-if="modalEditar" class="modalBg">
+      <form>
+        <button class="fechar" @click.prevent="fecharModal">X</button>
+        <h2>Editar Contato</h2>
+        <label for="nome">Nome </label>
+        <input type="text" id="nome" for="nome" required v-model="nome" :placeholder="contatos[index].nome">
+        <label for="telefone">Telefone</label>
+        <input type="text" maxlength="15" id="telefone" for="telefone" required v-model="telefone" :placeholder="contatos[index].telefone">
+        <p v-if="erroNome">O nome precisa conter pelo menos 2 palavras com 3 letras cada</p>
+        <p v-if="erroTelefone">O telefone precisa conter 10 dígitos</p>
+        <input type="submit" value="Editar" @click.prevent="editar">
+      </form>
+    </div>
+
+    <div class="tabela">
+      <div v-if="contatos.length">
+        <table>
+          <tr>
+            <td><b>Nome</b></td>
+            <td><b>Telefone</b></td>
+          </tr>
+          <tr v-for="(contato, index) in contatos" :key="index" :class="conferirDDD(contato) ? 'azul' : ''">
+            <td>{{contato.nome}}</td>
+            <td>{{contato.telefone}}</td>
+            <td class="botoes">
+              <button @click.prevent=" abrirModalEditar(index)" class="editar">Editar</button>
+              <button @click.prevent="excluirContato(index)" class="excluir">Excluir</button>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div v-else>
+        <span>Você não tem ninguém em sua lista</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    new Vue({
+      el: "#app",
+      data: {
+        contatos: [],
+        nome: '',
+        telefone: '',
+        modalAdicionar: false,
+        modalEditar: false,
+        erroNome: false,
+        erroTelefone: false,
+        index: '' //essa variável será usada para a edição e exclusão do contato
+      },
+      methods: {
+        adicionar() {
+          if (this.validarNome() && this.validarTelefone()) {
+            this.criarContato();
+            this.modalAdicionar = false
+            this.erroNome = false;
+            this.erroTelefone = false
+            // Limpar dados
+            this.nome = ''
+            this.telefone = ''
+
+          }
+          else if (!this.validarTelefone() && this.validarNome()) { // Blocos que validam se os inputs correspondem aos requisitos e, caso não, ativa o erro para indicar o que está errado
+            this.erroNome = false
+            this.erroTelefone = true
+          }
+          else if (!this.validarNome() && this.validarTelefone()) {
+            this.erroTelefone = false
+            this.erroNome = true
+          }
+          else if (!this.validarNome() && !this.validarTelefone()) {
+            this.erroTelefone = true
+            this.erroNome = true
+          }
+        },
+        editar() {
+          if (this.validarNome() && this.validarTelefone()) {
+            this.editarContato();
+            this.modalAdicionar = false
+            this.erroNome = false;
+            this.erroTelefone = false
+            // Limpar dados
+            this.nome = ''
+            this.telefone = ''
+          }
+          else if (!this.validarTelefone() && this.validarNome()) { // Blocos que validam se os inputs correspondem aos requisitos e, caso não, ativa o erro para indicar o que está errado
+            this.erroNome = false
+            this.erroTelefone = true
+          }
+          else if (!this.validarNome() && this.validarTelefone()) {
+            this.erroTelefone = false
+            this.erroNome = true
+          }
+          else if (!this.validarNome() && !this.validarTelefone()) {
+            this.erroTelefone = true
+            this.erroNome = true
+          }
+        },
+        criarContato() {
+          // Função para criar contato
+          const contato = {}; //objeto do contato
+          contato.nome = this.nome;
+          contato.telefone = this.telefone;
+          this.contatos.push(contato);
+        },
+        editarContato() {
+          //Função que edita o contato
+          var index = this.index
+          this.contatos[index].nome = this.nome
+          this.contatos[index].telefone = this.telefone
+          this.modalEditar = false
+
+        },
+        excluirContato(index) {
+          let confirmacao = window.alert("Deseja mesmo excluir esse contato?"); //confirmaçao para a exclusão do contato
+          if (!confirmacao) {
+            this.index = index;
+            this.contatos.splice(this.index, 1)
+          }
+        },
+        validarNome() {
+          //Função para validar se o nome corresponde aos requisitos
+          const regex = /\b[A-Za-zÀ-ú][A-Za-zÀ-ú]+,?\s[A-Za-zÀ-ú][A-Za-zÀ-ú]{2,19}\b/gi
+          const validacao = this.nome.match(regex)
+          return validacao
+        },
+        validarTelefone() {
+          //Confere se o telefone possui todos os números exigidos, no caso no minimo 10
+          telefoneArray = this.telefone.split('').length
+          if (telefoneArray > 10) {
+            return true
+          } else {
+            return false
+          }
+        },
+        abrirModalEditar(index) {
+          this.modalEditar = true;
+          this.index = index // Essa variável serve para editar e excluir os contatos.
+        },
+        fecharModal() {
+          this.modalAdicionar = false
+          this.modalEditar = false
+        },
+        mascaraTelefone() {
+          let x = this.telefone.replace(/\D/g, '').match(/(\d{0,2})(\d{0,4})(\d{0,4})/);
+          this.telefone = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '')
+        },
+        conferirDDD(contato) {
+          var telefoneArray = contato.telefone.split('').splice(0, 4)
+          var ddd = telefoneArray.join('')
+
+          if (ddd == '(11)') { //valida se o DDD é 11 para pintar a linha de azul
+            return true
+          } else {
+            return false
+          }
+        }
+      },
+      watch: {
+        telefone() { // observa a variável do telefone para aplicar a máscara
+          this.mascaraTelefone()
+        },
+      }
+    });
+
+
+  </script>
+</body>
+
+</html>
